@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pendataan Nomor Lokasi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F5F4EF;
+    --surface: #FFFFFF;
+    --ink: #1E2B29;
+    --muted: #6C7674;
+    --line: #DEDACE;
+    --accent: #21615E;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #E4EFEE;
+    --danger: #A24B3E;
+    --radius: 10px;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 18px 80px;
+  }
+  header.page h1{
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0 0 6px;
+  }
+  header.page p{
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .field{
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .field label{
+    display:block;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .field input, .field select{
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    background: #fff;
+  }
+  .field select{
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236C7674'><path d='M5.5 7.5l4.5 5 4.5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    background-size: 16px;
+    padding-right: 34px;
+  }
+  .field input:focus, .field select:focus, button:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .suggestions{
+    display:none;
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    margin-top: 2px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 30;
+    box-shadow: 0 6px 16px rgba(20,30,28,0.12);
+  }
+  .suggestions.show{ display:block; }
+  .suggestions div{
+    padding: 9px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+  }
+  .suggestions div:last-child{ border-bottom: none; }
+  .suggestions div:hover{ background: var(--accent-soft); }
+
+  button#submit-btn{
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    border-radius: 7px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  button#submit-btn:disabled{ opacity: .55; cursor: default; }
+  .form-msg{
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+  .form-msg.error{ color: var(--danger); }
+  .form-msg.ok{ color: var(--accent); }
+
+  .dash-header{
+    display:flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 32px 0 12px;
+  }
+  .dash-header h2{
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 19px;
+    margin: 0;
+  }
+  .refresh-btn{
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px;
+  }
+  input#search{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    margin-bottom: 14px;
+  }
+  .location-group{ margin-bottom: 16px; }
+  .location-group h3{
+    font-size: 14.5px;
+    font-weight: 600;
+    margin: 0 0 7px;
+  }
+  .location-group h3 .n{
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  ul.entries{
+    list-style: none;
+    margin:0; padding:0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  ul.entries li{
+    padding: 10px 13px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 13.5px;
+  }
+  ul.entries li:last-child{ border-bottom: none; }
+  .nomer{ font-weight: 600; font-variant-numeric: tabular-nums; }
+  .provider{ color: var(--muted); }
+  .meta{ margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+  .empty, .loading{
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <h1>Pendataan Nomor Lokasi</h1>
+    <p>Isi nomor yang ada di lokasi kamu.</p>
+  </header>
+
+  <form id="entry-form" class="card">
+    <div class="field">
+      <label for="lokasi">Nama Lokasi</label>
+      <input id="lokasi" autocomplete="off" placeholder="cth. Gudang Bandung" required>
+      <div class="suggestions" id="lokasi-suggestions"></div>
+    </div>
+    <div class="field">
+      <label for="nomer">Nomer</label>
+      <input id="nomer" inputmode="tel" placeholder="0812xxxxxxx" required>
+    </div>
+    <div class="field">
+      <label for="provider">Provider</label>
+      <select id="provider">
+        <option value="">Pilih provider</option>
+        <option value="AXIS">AXIS</option>
+        <option value="BY U TELKOMSEL">BY U TELKOMSEL</option>
+        <option value="INDOSAT">INDOSAT</option>
+        <option value="SMARTFREEN">SMARTFREEN</option>
+        <option value="TELKOMSEL">TELKOMSEL</option>
+        <option value="TRI">TRI</option>
+        <option value="XL">XL</option>
+      </select>
+    </div>
+    <button type="submit" id="submit-btn">Kirim</button>
+    <div class="form-msg" id="form-msg"></div>
+  </form>
+
+  <div class="dash-header">
+    <h2>Dashboard</h2>
+    <button class="refresh-btn" id="refresh-btn">Refresh</button>
+  </div>
+  <input id="search" type="text" placeholder="Cari lokasi, nomer, atau provider…">
+  <div id="list-area">
+    <div class="loading">Memuat data…</div>
+  </div>
+
+</div>
+
+<script>
+// ==== GANTI DENGAN WEB APP URL DARI APPS SCRIPT KAMU ====
+const APPS_SCRIPT_URL = 'PASTE_APPS_SCRIPT_WEB_APP_URL_DI_SINI';
+
+const PRESET_LOCATIONS = ["Ancol Dufan Ice Age Indoor Playgound", "Bandara Sultan Syarif Kasim II Pekanbaru  Lantai 1", "Bandara Ahmad Yani Semarang Lt. 1 (Kedatangan)", "Stasiun Semarang Tawang", "23 Paskal Shopping Center Bandung", "Green Pramuka Square Mall Lt. UG (Depan Playless)", "Lagoon Avenue Mall Sungkono", "WTC Batanghari Jambi", "Transmart Jambi ( Depan Kincir )", "Mall Pekanbaru Lt Dasar", "Alfa Resort Hotel & Conference Puncak Bogor", "Plaza Citra Pekanbaru Lt.2", "Lippo Plaza Jambi Lt. LG", "Ancol Ocean Dream Samudra Lokasi Under Water", "Living Word Pekanbaru Lt. 2-05", "Bandara Kualanamu Medan Lt.1", "Bandara Radin Inten II International Lampung Gate 1", "Bandara Sultan Mahmud Badaruddin II Palembang Gate 2", "Ancol Sea World Area Museum", "Bandara Minangkabau Padang", "Bandara Adi Soemarmo Solo Lantai 3", "Stasiun Gubeng Surabaya", "Stasiun Pasar Turi", "Gajah Mada Plaza Jakarta  Lt. LG & LM", "Java Mall Semarang Lt. 1", "Dago Dreampark Lokasi Area Pinehouse", "Phinisi Point Mall Makassar", "Stasiun Malang Kotabaru Lantai 1", "E Walk Balikpapan LG Barat", "Jatinangor Town Square Lt FF", "Museum Listrik Dan Energi Baru TMII", "Taman Mas Kemambang Lokasi Depan Loket 2", "Stasiun Purwokerto", "Stasiun Kejaksan Cirebon", "Transmart Palembang", "Transmart Padang", "Kaza City Mall Surabaya Lt.2", "Grage City Mall Cirebon", "Pentacity Mall Balikpapan FF", "Lippo Plaza Jogja Lantai GF", "Lippo Plaza Sidoarjo", "Lippo Plaza Batu Malang Lt. RF", "Jatim Park 3 - Dekat Indomaret", "Rasamadu Heritage", "Surabaya Suites Hotel Area Lobby", "The Alana Solo", "Kidzania Surabaya", "Eco Green Park", "Platinum Cinema Magelang", "Pasar Baru Trade Center Bandung", "Metropolitan Mall Bekasi", "Mall Pesona Square Depok", "Supermall Karawaci", "MT Haryono Residence", "Mega Bekasi Hypermall Lt 3", "Mall Kuningan City Lt. 2", "Stasiun Cirebon Prujakan", "Stasiun Bandung Ruang Tunggu Utara Lama", "Cirebon Super Block Mall LG-04", "Depok Town Center", "Gajah Mada Plaza Malang", "The Grand Outlet", "Suite Life Sedayu City", "RS Bhakti Timah Pangkalpinang Lt. 1", "Basko Grand Mall Lantai GF", "Lorin Syariah Solo Hotel", "Dwangsa Lorin", "Plaza Bintaro Jaya Banten Lt.3", "Batu Love Garden", "Plaza Kalibata Jakarta Lantai FF", "Eka Lokasari Bogor Lantai UG", "Eka Lokasari Bogor Lantai 2", "Eka Lokasari Bogor Lantai 3", "One Bell Park", "Plaza Pondok Gede Bekasi", "Nicoles River Park", "Vivo Mall Sentul", "Rest Area Km97 Cipularang Lorong Samping", "Mall Olympic Garden Malang Lt. Basement", "Masjid Istiqlal Lokasi Al Quddus", "Taman Safari Indonesia", "Mall Sosoro Lt. GF", "City Mall Cilegon", "Bakauheni Shopping Mall Lt. GF", "Teras Kota Lantai 2", "The Central Mall Gunawangsa Tidar", "CitiMall Cianjur 1", "CitiMall Cianjur 2 Lt. G", "Malang Town Square Lt. UG", "Tentrem Mall Semarang", "Lippo Plaza Jogja Lantai 1", "Beefun Playland Surabaya", "Yogya Sumbersari Junction", "Stasiun Tugu Yogyakarta", "Terminal Tingkir Salatiga", "Mall Pekanbaru Lt 3", "RS MRCCC Siloam Semanggi", "BTPN Mega Kuningan Lt. 27", "Mall Pekanbaru Lt 1", "Aston Solo Hotel", "Bassura Mall LG", "The King Shopping Center  Lt. LG Depan DIY", "Sukaramai Trade Center  Baru Lobby Cokro", "Sleman City Hall  Lt.1", "Asstro Highland Ciater", "Bandara Pattimura Ambon", "STS Sadang Purwakarta", "Lokawisata Baturaden", "Icon Walk Banten", "Transmart Graha Raya", "Jatim Park 3 - Depan Brasco", "RSUD Khidmat Sehat Afiat KISA Depok Lt. 1", "Heha Sky View Yogyakarta", "RSUD Dr Adjidarmo Rangkasbitung Gedung C Lt. 1", "Menara Pandang Teratai Purwokerto", "Pacific Garden Square", "Taman Bunga Celosia - Foodcourt Atas", "Taman Bunga Celosia - Exit", "Taman Bunga Celosia - Lorong", "Stasiun Balapan Solo", "Karawang Central Plaza Fun World", "Point Coffee Gedhe Rest Area Km 43 Merak", "Point Coffee Gedhe Ambon", "Pamulang Square", "Pelabuhan Ulee Lheue Aceh", "BSD Plaza Lt. LG", "Duta Mall Banjarmasin LD-07", "Bandara Adi Soemarmo Solo Lantai 1", "Tangcity Mall Lantai GF", "Saloka Theme Park Lokasi Stasiun", "Ambon City Center Lt. HDB", "CBD Ciledug Family Mall", "Mall Paradise Walk Serpong Area Jembatan UG", "Suncity Mall Plaza Madiun", "Baywalk Mall Pluit Lt. LG", "Point Coffee Hos Cokro 33 Bali Stand Alone", "Stasiun Lempuyangan Yogyakarta", "Suncity Mall Sidoarjo", "Living World Denpasar", "Cinere Bellevue Mall", "Linggajati Plaza", "Green Pramuka Square Mall Lt. LG (Depan DIY)", "Apartemen Serpong Green View", "Blitar Square", "Atria Hotel Gading Serpong Area Lobby Hotel", "Trans Studio Mall Bali", "Lippo Plaza Kupang Lt. GF", "Ambon Manise Square", "ITC Mega Grosir Surabaya", "Malang City Point", "Ramayana Karawang", "Go! Wet Waterpark Grand Wisata", "Stasiun Cisauk", "Binus Square Hall", "Mall Balekota Tangerang Area Atrium Oetama", "The Plaza Millenium Medan Lt 5", "Royal Plaza Surabaya UG", "Lippo Plaza Aceh Lt. LG", "Beachwalk Shopping Center Bali", "Matahari Duta Plaza Denpasar", "Plaza Renon Bali", "Lorin Sentul Hotel", "Royal Safari Garden Area Lobby", "Darmo Trade Center Surabaya", "MTC Mall Panam Pekanbaru Riau Dasar Selatan", "Masjid Attawun Lokasi Laki-Laki", "Masjid AttaAwun Lokasi Perempuan", "Mall Boxies 123 Lt.1", "Pluit Village", "Masjid Istiqlal Lokasi Al Fattah", "Lippo Plaza Keboen Raya Bogor", "Plaza Malioboro Yogya Lantai 3", "Plaza Malioboro Yogya Lantai LG", "Cibinong Mall", "Citra Xperience Kemayoran", "Green Walk Mall Lt. GF", "Cluring Waterpark", "Plaza Indah Bogor", "Rest Area KM88 A", "Rest Area KM88 B", "The Bagong Adventure Museum Tubuh", "Tomang Tol Plaza", "Kaza City Mall Surabaya Lt.3", "Nipah Mall Makassar", "Mall Cinere", "Mall Ratu Indah Makassar", "RS Siloam Lippo Village Ruang Internist", "OPI Mall Palembang Lt.1", "Beefun Playland Sidoarjo", "OPI Mall Palembang Lt.2", "Mall Alam Sutera Lantai 1", "Mall Alam Sutera Lantai 2", "Aston Kemayoran City Hotel", "Pelabuhan ASDP Merak", "Starlet Hotel BSD City Tanggerang", "Museum Angkut Malang", "Carstensz Mall", "Resinda Park Mall Karawang Lt. 1", "RS DR Bratanata Jambi", "Hillpark Sibolangit Foodcourt", "RS Islam Sultan Agung Banjarbaru Klinik Urologi", "Hillpark Sibolangit Lobby", "RS Indriati Solo Baru", "RSUD Cempaka Lima Aceh", "Rest Area Km97 Cipularang Lobby Belakang", "Brasco Factory Outlet", "Mall Dinoyo City Malang Lobby", "Mall Dinoyo City Malang Lt.2", "Kediri Town Square", "Hotel Aston Bogor Area Meeting Room", "Cilegon Center Mall Lantai LG", "Matahari Department Store Aceh", "Ramayana Plaza Andalas Padang Lt. GF", "Ramayana Kupang", "Klinik Cempaka Lima Aceh", "RSIA Cempaka Azzahra Aceh", "RS Ananda Purwokerto", "RS Universitas Sebelas Maret", "Pelabuhan PadangBai Bali Depan Loket", "Heha Ocean View Yogyakarta", "Jagorawi Golf & Country Club Ruang Salin Laki-Laki", "ASDP Ketapang", "Candi Prambanan - Pintu Keluar Objek Wisata", "Bandara Sultan Aji Muhammad Sulaiman Sepinggan Balikpapan", "Candi Prambanan - Pintu Keluar Candi", "Joss Gandos Ketintang", "RS Indriati Boyolali Lt. 1", "Citimall Dumai Lantai Dasar", "Bandara Aji Pangeran Tumenggung Pranoto Samarinda", "Citimall Dumai Lantai 2", "Turbo Billiard And Cafe", "Bandara Kulon Progo Yogyakarta Domestik Area Check In", "POP Hotel Diponegoro Surabaya", "Bandara Kulon Progo Yogyakarta Internasional", "The Alana Hotel Malang", "Miko Mall Bandung", "Intercontinental Bali Resort", "Mall Botania Batam Lt. UG", "Top Malioboro Hotel Jogya", "Nagoya Hill Mall Lantai LG (LGCN129)", "Bandara Ngurah Rai Bali Gate 3", "Nagoya Hill Mall Lantai 1 (FFCN025)", "Nagoya Hill Mall Lantai 2 Depan Electronic City (SFCN015)", "Bandara Sultan Iskandar Muda Aceh", "Transmart Carrefour Maguwoharjo", "Bandara Internasional El Tari Kupang Gate 1", "Bandara Internasional El Tari Kupang Gate 3", "One Batam Mall", "Mall Malioboro Yogyakarta", "Mall Bali Galeria", "Transmart Mataram Lombok", "Pop Hotel Sangaji Yogyakarta", "Plaza Madiun", "RS Islam Siti Hajar Poli Paru", "Plaza Madiun Lt.1 (Food Court)", "Inkoppabri Cisarua Resort", "Plaza Surabaya", "RSUD Kota Mataram Ruang Nifas", "Swalayan Maju Bersama Denai", "Swalayan Maju Bersama Katamso", "Bobopod Juanda", "Mall Olympic Garden Malang Lt. 2", "PT ASDP Indonesia Ferry Lombok", "Bobobox Pods Pancoran", "Mataram Mall Lantai 1", "Mataram Mall Lantai 2", "Jambi Town Square Lt Dasar", "Lippo Plaza Batu Malang Lt. GF", "Jambi Town Square Lantai 2", "Bobopod Kota Tua", "Ring Road City Walks Mall Medan Lantai 1", "Mega Mall Manado", "Point Coffee Gedhe Manado", "Medan Mall", "Jogya City Mall Lt.1", "Istana Plaza Bandung Lantai LG", "Istana Plaza Bandung Lantai UG", "Klinik Utama Fakhira", "Jogya City Mall  Lt.LG", "Yogya Ciranjang Cianjur", "Sun Plaza Medan Depan ATM", "Sleman City Hall Lt.2", "Kebayoran Park Mall", "Centre Point Medan  Lantai 3", "Galeria Mall Yogya Lt UG", "RS Siloam Bogor", "Galeria Mall Yogya Lt.2", "Suvarna Jakarta Golf Club", "Centre Point Medan Lantai 3A", "Malang Town Square Lt. LG", "Lawu Plaza Madiun Lt. 1 Lama", "Lippo Plaza Lubuklinggau Lantai LG", "Lawu Plaza Madiun Lt. 1 Baru", "Lippo Plaza Lubuklinggau UG", "Grand City Mall Surabaya Lt. LG", "Central Plaza Lampung", "Grand City Mall Surabaya Lt. 2", "Bobopod Dago Bandung", "Grand City Mall Surabaya Lt. 4", "Cambridge City Square Lantai 2  Depan Ice Skating", "City Of Tomorrow Mall Lt. UG", "Cambridge City Square Lantai 2 Cocoland", "City Of Tomorrow Mall Lt. 1", "Grage Mall Cirebon Lt.1", "Lippo Plaza Medan Lt.UG", "Bandara Juanda Surabaya  Central Lobby  Internasional", "Manhattan Times Square Lantai UG", "Bandara Juanda Surabaya Boarding Lounge  Internasional", "Manhattan Times Square Lantai 2", "Transmart Lampung", "Manhattan Urban Market Medan", "RSAU Dr M Hasan Toto Bogor", "Bandara Juanda Surabaya Gate 10", "Palembang Square Lt. UG", "Palembang Square Extension Lt.LG Depan Miniso", "Palembang Indah Mall", "Transmart Pangkal Pinang Depan Ice Cream Feel", "Palembang Trade Center Lantai UG", "Palembang Trade Center Lantai LG", "Palembang Trade Center Lantai M1", "Angkasa Garden Hotel Pekanbaru", "Pekanbaru Xchange Lt UG", "RS Eria Pekanbaru", "Grand Jatra Hotel Pekanbaru Ballroom", "Grand Jatra Hotel Pekanbaru Lobby", "Plaza The Central Pekanbaru Lt. Dasar", "RS Aulia Pekanbaru", "Transmart Pekanbaru Wing Kanan", "Transmart Pekanbaru Wing Kiri", "Bandara Supadio Pontianak Gate 3 Area Schedule Board", "Berlin Pool And Bistro Pontianak Lt. 1", "DBotanica Bandung Mall", "Bandara Depati Amir Pangkal Pinang", "Bandara Kualanamu Medan (Depan Money Changer)", "Bandara Kualanamu Medan Gate 4", "Bandara Kualanamu Medan Gate 8", "Bandara Kualanamu Medan Gate 9", "Bandara Sultan Syarif Kasim II Pekanbaru Lantai 2", "Bandara Sultan Syarif Kasim II Pekanbaru Lt. Dasar (Bank BRI)", "Living World Alam Sutera", "Bandara Sultan Mahmud Badaruddin II Palembang Area Check In", "Bandara Fatmawati Soekarno Bengkulu", "Cihampelas Walk Bandung Lantai 1", "Transmart Cipadung  Area Supermarket", "Ujung Berung Town Square Lt 2 (Titik 1)", "Bandung Kunafee Pasteur", "Yogya Mekar Wangi", "Bandung Indah Plaza Lt 1", "Sariater Lobby Area", "Istana BEC Bandung Lt. L3K-06", "Yogya Lembang", "CitiMall Garut Lt 1", "Tahu Susu Lembang", "Ciplaz Garut", "Floating Market Lembang", "Farm House Lembang", "Yogya Bojong Soang Bandung", "Bandara International Zainuddin Abdul Madjid Lombok Gate 2", "Bandara International Zainuddin Abdul Madjid Lombok Gate 3", "The Great Asia Africa Bandung Lt.1", "RS Mayapada Tanggerang Gedung 2 Lt 1 Ruang Orthopedi", "Hotel Newton Bandung", "Transmart Buah Batu Bandung", "Novena Hotel", "The Grove Alam Sutera", "Pacific Mall Tegal", "Rita Supermall Tegal Lt 1", "Bandara Sam Ratulangi Manado", "Lombok Epicentrum Mall Lantai LG", "Rest Area 260B Brebes", "Lombok Epicentrum Mall Lantai 1 A", "Lombok Epicentrum Mall Lantai 1 B", "Toserba Yogya Tegal", "Bandara Hang Nadim Batam Gate A4", "Bandara Hang Nadim Batam Gate A5", "Bandara Hang Nadim Batam Gate A6", "Bobobox Pods Paskal", "The Park Mall Solo Lt. 1", "Ramada Suites Hotels Solo Area", "The Park Mall Solo Lt. LG", "Mikie Holiday DO", "Mikie Holiday Star Teather", "Mikie Holiday Hotel", "Ramayana Samarinda Square", "Plaza Citra Pekanbaru Lt.3", "DCastello Ciater Lokasi Foodcourt", "Mal Ciputra Seraya Lt.2 (C08 & C09)", "Mal Ciputra Seraya Lt.1 (C03)", "Platinum Cineplex Solo", "Mega Mall Bengkulu", "Platinum Cineplex Citimall Lahat", "Tirtonadi Solo", "Mall SKA Pekanbaru Lantai 3", "Mall SKA Pekanbaru Lantai 5", "Botani Square Mall Bogor Lantai GF - C1 Depan A&W", "Cilegon Center Mall Lantai 2", "Transmart Jambi (Depan Solaria)", "Metropolis Town Square", "MTC Mall Panam Pekanbaru Riau  Lantai 1", "MTC Mall Panam Pekanbaru Riau Lantai Dasar Utara", "Basko Grand Mall Lantai 2", "Mall Pekanbaru Lt. Bassement", "Tangcity Superblock Lantai B1", "Rita Supermall Tegal Lt 2", "RSUD Simpang Lima Gumul Kediri Lt. 2", "Bobopod Kebayoran Baru", "Bobopod Tanah Abang", "Hotel Neo+ Kebayoran Area Lobby", "Balubur Town Square Lantai 2", "Trans Studio Mall Makassar", "Social Market Palembang Lantai 1", "Mall Ciputra Semarang", "Taman Rekreasi Selecta", "WH Jakarta", "Social Market Palembang Lantai 2", "Ring Road City Walks Mall Medan Lantai 3", "Siantar Waterpark", "Great Western Resort", "Hotel Novotel Pekanbaru", "Kediri Mall", "Suzuya Mall Rantau Prapat", "Siantar City Square", "Nara Park Bandung", "The Park Mall Solo Lt.2", "Bandung Indah Plaza Lt 2", "Jatinangor Town Square Lt GF", "Lampung City Mall", "Grand Soll Marina Hotel Tangerang", "Tamini Square", "Pelabuhan Gilimanuk Bali", "Terminal Tidar Magelang", "Suzuya Merdeka Mall L2", "The Plaza Millenium Medan Lt 3", "Rita Supermall Tegal Lt B", "Pekanbaru Xchange Lt 2", "Plaza Parahyangan", "Ambon City Center Lt GF", "Java Connection Bandara Yia", "Bandara Kualanamu Medan Area Relink", "Nicoles River Park Area Carnaval Dan Resto", "Bayleaf Guest House Syariah Batu", "Mega Bekasi Hypermall Lt 2", "Mall Cikampek", "Masjid Raya Syekh Ahmad Khatib Al-Minangkabawi Lokasi Laki-Laki", "Masjid Raya Syekh Ahmad Khatib Al-Minangkabawi Lokasi Perempuan", "RSUD Gambiran Kota Kediri", "The Grand Outlet Lt Food Court", "Tanjungpinang City Center", "Pelabuhan Balohan", "Dhoho Plaza Kediri Pintu Selatan", "Hotel Horison Ultima Makassar", "Honda Thamrin Jambi", "Grand Makmur Hotel Jambi", "Resinda Park Mall Karawang Lt 2", "Ramayana Makassar Town Square", "Area Test 1", "Mall Batam City Square", "Mega Mall Batam Centre", "Mall Matahari Daan Mogot", "Mall Artha Gading", "Depok Town Square", "Lamongan Plaza", "Mega Trade Centre Megamas", "Mall Botania Batam Depan Gogo", "Ponorogo City Center", "PAM Event External", "Istana BEC Bandung Lt. L3A", "Indogrosir Malang", "Area Test 2", "Taman Aerosport Pekanbaru", "Soll Marina Hotel Serpong", "Bobopod Airport CBC Tangerang", "RSUD Praya Ruang Tunggu Farmasi", "Sleman City Hall Lt.2 Depan TimeZone", "Ujung Berung Town Square Lt  2", "RSUD Teluk Kuantan Ruang Rawat Inap", "Citiplaza Bondowoso", "Skinologic Clinic", "Plaza Bukit Tinggi", "Terminal Tegal", "Bencoolen Mall Bengkulu", "Centre Point Medan Lantai 1", "Bappeda Jawa Timur", "Aston Mojokerto Hotel & Conference Center", "Plaza Bintaro Jaya Banten Lt.2", "Jet Billiard", "Gammara Hotel Makassar", "Hotel Royal Bay Makassar", "Apotek Wellings Tebet", "Ancol Dufan Kawasan Hikayat", "Dago Dreampark Lokasi Area Pirate", "Sariater Area Kolam Kimanis", "The Great Asia Africa Bandung Lt.B3", "Stasiun Madiun", "Stasiun Kediri", "Bekasi Trade Center", "Cibinong City Mall Lt.1", "Grand Asia Hotel Makassar", "Hotel Khas Makassar", "Whiz Prime Hotel Sudirman Makassar", "A.S.S Mall Brebes", "DCastello Ciater Lokasi Tempat Oleh-Oleh", "Living Word Pekanbaru Lt. 2-18", "Artasedana Sanur", "Artasedana Ngurah Rai Singaraja", "Artasedana Sesetan", "Artasedana Surapati", "Suzuya City Mall Rantau Prapat", "Navasari Pool & Resto", "Pelabuhan Bakauheni", "Indogrosir Jambi", "Alfamart Rest Area KM 43 Merak", "Alfamart Rest Area KM 19B-2 Bekasi", "Alfamart Rest Area KM 39A-2 Cikampek", "Alfamart Rest Area KM 626B-1 Madiun", "Toserba Yogya Heritage", "Platinum Cineplex Cibitung", "Alfamart Rest Area KM 208B Cirebon", "Alfamart Rest Area KM 833B Purbolinggo", "Plaza Citra Pekanbaru Lt. 1", "Alfamart Rest Area KM 792B Pasuruan", "Alfamart Rest Area KM 819A Pasuruan", "Alfamart Rest Area KM 26-1 Sidoarjo", "Grand Central Premier Hotel Medan", "Toserba Yogya Slawi", "Cirebon Super Block Mall LG-08", "Concordia Lounge Domestic Lombok", "Duta Mall Banjarmasin LD-11", "Masjid Raya Al-Ittihad Tebet Mas", "CitiMall Cianjur 2 Lt. 1", "Stasiun Tegal", "Taman Mas Kemambang Lokasi Belakang Rumah Makan Warras", "Ancol Ocean Dream Samudra Lokasi 5D", "Saloka Theme Park Lokasi Polah Bocah", "Water Kingdom Mekarsari Lokasi Yokabento", "RS Siloam Lippo Village MCU", "RS Siloam Lippo Village Ruang Tunggu Lt.6", "RS Indriati Boyolali Lt. 2", "RS Mayapada Tanggerang Gedung 2 Lt 1 Ruang Cardio", "RS Mayapada Tanggerang Gedung 3 Lt 1 Ruang Farmasi", "RS Mayapada Tanggerang Gedung 3 Lt 3 Ruang Tunggu", "RS Mayapada Tanggerang Gedung 3 Lt 3 Ruang Basment", "RS Mayapada Tanggerang Gedung 1 Lt 1 Ruang Tnc", "RS Mayapada Tanggerang Gedung 1 Lt 1 Ruang Fastrack", "RS Mayapada Tanggerang Gedung 1 Lt 1 Ruang Farmasi Center", "RS Mayapada Tanggerang Gedung 1 Lt 2 Ruang Lab", "RS Mayapada Tanggerang Gedung 1 Lt 2 Ruang Pendaftaran", "RS Mayapada Tanggerang Gedung 1 Lt 3 Ruang MCU", "RS Islam Sultan Agung Banjarbaru Customer Service", "RS Islam Siti Hajar Poli Eksekutif", "RSUD Dr Adjidarmo Rangkasbitung Gedung B Lt. 2", "Transmart Pangkal Pinang Pintu Lift", "Mall Boxies 123 Lt.2", "Mall Boxies 123 Lt.3", "Lippo Plaza Jambi Lt. 1", "RSUD Khidmat Sehat Afiat KISA Depok Lt. 2", "Sun Plaza Medan  Depan Gramedia", "Maspion Square Lt. UG", "Pelabuhan PadangBai Bali Ruang Tunggu Keberangkatan", "RSUD Teluk Kuantan Ruang Karyawan", "RSUD Teluk Kuantan Lobby", "Royal Safari Garden Area Bamper Car", "RSUD Praya Poliklinik I", "Royal Safari Garden Area Komando", "Hotel Neo+ Kebayoran Area Coffe Shop", "Atria Hotel Gading Serpong Area Lobby Grand Ballroom", "Bandara Supadio Pontianak Gate 3 Area Landasan", "Bandara Supadio Pontianak Area Check In", "Hotel Aston Bogor Area Lobby", "Jagorawi Golf & Country Club Ruang Salin Perempuan", "BSD Plaza Lt. 1", "Mall Kuningan City Lt. 3", "Bandara Kulon Progo Yogyakarta Domestik Gate 1", "Bandara Kulon Progo Yogyakarta Domestik Gate 2", "Bandara Kulon Progo Yogyakarta Domestik Gate 3", "The King Shopping Center  Lt. LG Gramedia", "The King Shopping Center  Lt. 2", "The King Shopping Center  Lt. 3 Selma", "Bandara Ahmad Yani Semarang Gate 1", "Bandara Ahmad Yani Semarang Gate 3", "Bandara Ahmad Yani Semarang Internasional", "The King Shopping Center  Lt. 3 Sport Station", "The King Shopping Center  Lt. 4", "Berlin Pool And Bistro Pontianak Lt. 2", "Transmart Padang  Lt.2", "Green Walk Mall Lt. 2", "Grage Mall Cirebon Lt.2", "Lippo Plaza Aceh Lt. GF", "Ramayana Plaza Andalas Padang Lt. 4", "Bakauheni Shopping Mall Lt. 1", "Sukaramai Trade Center  Baru Lobby Bonjol", "Mall Sosoro Lt. 1", "Duta Mall Banjarmasin LD-08", "Duta Mall Banjarmasin LD-02", "Surabaya Suites Hotel Area Pool & Gym", "Java Mall Semarang Lt. 3", "Mall Balekota Tangerang Area Lobby Passer", "Mall Cijantung", "Jambi Prima Mall", "Marchand Hype Station Bintaro", "Alfamart Rest Area KM 45A Bogor", "Alfamart Rest Area KM 45A-2 Bogor", "Artasedana Amlapura", "Alfamart Raya Kartini Cirebon", "Alfamart Diponegoro", "Mutiara Cahaya Mejasem", "Lotte Grosir Jatake", "Baywalk Mall Pluit Lt. 1", "Alfamart Rest Area KM 575A Ngawi", "Lippo Plaza Kupang Lt. UG", "Trans Studio Mall Bandung L3", "Citimall Lahat LG", "Plaza Kalibata (EFATA GRASIA)", "RS Medika Dramaga", "PT Bima Sakti Multi Energi", "Norma Aesthetic Clinic Madiun", "Indogrosir Bogor", "Bobopod ITC Kuningan Jakarta", "Bogor Aquagame", "Graha Pena Riau", "Stasiun Jatibarang", "Ramayana Cilegon", "Plaza Medan Fair", "Apartement Trimezia Beverly-Paramount Serpong", "Shanaya Resort Malang", "Bobobox Pods Alun Alun Bandung", "Lombok Epicentrum Mall Lantai GF", "RSU Banjar Patroman", "Suzuya Tanjung Morawa", "Bandara Syamsuddin Noor Banjarmasin Gate 1", "Masjid Al-Hakim Padang", "RSUD Cimacan", "Sun East Mall Banyuwangi", "Mall Mandau City", "Fame Hotel Gading Serpong", "Naga Swalayan Cikarang", "Kentring Manik (CV Pesona Indah Nusantara)", "Bandung Kunafe Soreang 99", "Festival Citylink Bandung", "Bandara Juanda Surabaya Gate 11 Sebelah Travelator", "Bandara Ngurah Rai Bali Gate 6", "Taman Ruang Playground Riau", "Rosin Resto Subang Rest Area", "Indogrosir Cikokol", "Polygon Bike Hub", "Pelabuhan Ajibata Area Kapal Pora-pora", "Bandara Kualanamu Medan Gate 5", "Buaran Plaza", "Sukaregang Leather Centre", "Scientia Square Park", "Taman Balekambang Surakarta", "One Stadium Pool & Gaming", "Itc Roxy  Mas", "The Grove North Sunter", "RS Islam Aminah Blitar", "Cihampelas Walk Lantai GF Luar", "Cihampelas Walk Bandung Lantai GF Dalam", "Cibinong City Mall Lt.UG - Tyeso", "Pelabuhan Ajibata Area Kapal Ihan Batak", "RS Bhayangkara Kediri", "RS. Dadi Keluarga Ciamis", "One Stix Bogor Billiard & Cafe", "Atlantis Water Adventure Ancol", "Terminal Tipe A Gambut Barakat", "Ma'Had Aisyah Binti Abu Bakar Li Al-Dakwah", "Autokool Cirebon", "Aeon Mall Bsd City", "Front One The Andia Boyolali", "Starlet Hotel Serpong Tangerang", "Point Coffee Gedhe Rest Area Km 65A Medan", "Gbi Christ Cathedral", "Lrt City Sentul - Royal Sentul Park", "Basko City Mall Padang", "Discovery Mall Bali", "Kendedes Pusat Oleh Oleh Batu Malang", "Rs Murni Teguh Memorial", "Rsia Murni Teguh Rosiva", "Rsu Murni Teguh Methodist Susanna Wesley", "Rs Murni Teguh Pematang Siantar", "Rs Murni Teguh Ciledug", "Rs Murni Teguh Sudirman Jakarta", "Murni Teguh Tuban Bali Hospital", "Rs Murni Teguh Naripan Bandung", "Rs Murni Teguh Pejaten", "Pelabuhan Gili Mas", "Pelabuhan Kedaro", "Jatim Park 3 - Funtech", "Riau Garden Pekanbaru", "K Square Mall Batam", "It Center Manado", "Bandara Internasional  Soekarno-Hatta", "Nagoya Hill Mall Lantai 2 Depan Kidzallia (SFCN025)", "Bandara Sultan Aji Muhammad Sulaiman Sepinggan Balikpapan Gate 2", "Plaza The Central Pekanbaru Lt. 1", "Plaza The Central Pekanbaru Lt. 2", "Puncak Pass Resort", "Ramayana Pontianak", "Griya Batununggal Bandung", "Lippo Plaza Medan Lt.1", "RS Bhakti Timah Pangkalpinang Lt. 2", "Masjid Raya Mujahidin Pontianak", "One District At Puri", "Toserba Yogya Garut", "Palur Plaza Karanganyar", "Supersplash Waterpark Kartika Residence", "Ancol Sea World Area Foodcourt", "Bandara Juanda Surabaya Gate 11 Sebelah Playground", "Masjid Agung Kota Sukabumi", "Alam Sutera Sport Center", "World Capital Tower", "The Galeria Mall Banjarmasin", "Mega Bekasi Hypermall Area Travel", "Auto 2000 Pramuka", "Auto 2000 Cempaka Putih", "Universitas Muhammadiyah Jambi", "Swiss Belcourt Makassar", "Arta Sedana Negara", "Grand Arjuna Hotel Bandung", "Hotel Grandhika Setiabudi Medan", "Hotel Crystal Inn", "The East Batam", "Hotel Sutha Lin Syariah Jambi", "Snowville Sentul", "Resinda Park Mall Karawang Basement", "Sukaramai Trade Center  Lt.1", "Fresh Fields", "Klinik Liza Medika Jambi", "Mall Of Bengkinang Lt. Dasar", "Mall Of Bengkinang Lt. 1", "Swalayan Goori Demak", "Swalayan Goori Gunung Pati", "Swalayan Goori Karangjati", "Swalayan Goori Jatisari", "Swalayan Goori Ngaliyan", "Palembang Trade Center Lantai M2", "Palembang Trade Center Lantai GF (Lobby Barat)", "Palembang Trade Center Lantai M3", "Royal Plaza Surabaya Lt.2", "Hypermart Cyberpark Karawaci Lku", "Botani Square Mall Bogor Lantai LG (Depan Panorama)", "RS Bhayangkara Kediri Lt.2", "Bandara Radin Inten II International Lampung Gate 2", "Cordia Hotel Banjarmasin", "Trans Studio Mall Cibubur", "Safari Solo", "Agung Toyota Jambi Pall 10", "Jatim Park 1", "Yogya Riau Junction Bandung", "Mega Bekasi Hypermall Lt.GF Unit", "Trans Studio Mall Bandung Lantai 2", "Bandara Syamsuddin Noor Banjarmasin  Bagage Claim", "Masjid Agung At Taqwa Bengkulu", "RSUD Kardinah Tegal Ruang Informasi", "RSUD Kardinah Tegal Ruang Dewadaru", "RSUD Kardinah Tegal Ruang RA Kartini", "RSUD Kardinah Tegal Ruang Komite", "Koperasi Mitra Husada Sidoarjo Gedung Pusat Terpadu", "Koperasi Mitra Husada Sidoarjo Kafe Selazzar", "Warkop Udaa", "Skyward Project Bandung Area Locker Room", "Skyward Project Bandung Area Slide", "Pelabuhan ASDP Roro Telaga Punggur", "Siloam Hospitals Agora Cempaka Putih - Lobby Siloam Hospitals Agora", "Siloam Hospitals Agora Cempaka Putih - Depan Fo Dan Samping Ruang Tunggu Farmasi", "Siloam Hospitals Agora Cempaka Putih -Ruang Tunggu OPD Lt. 11", "Warung Kopi Bahagia Bersama", "Hyfresh Supermarket Bojong Sari Sawangan", "Hypermart Pesona Square Depok", "HW Livehouse QBIG BSD", "Hyfresh Cikarang Festival", "Hypermart Lippo Cikarang", "Hypermart Puri Indah", "Hypermart Daan Mogot", "Hypermart Metro Trade Center (Metro Indah Mall Bandung)", "Green Pramuka Square Lt. UF ( Depan Oh Some )", "Koperasi Mitra Husada Sidoarjo Mawar Kuning", "Koperasi Mitra Husada Sidoarjo Graha Delta Husada II", "Pentacity Shopping Venue L.UG", "RS Restu Kasih  Poli Umum", "Masjid Raya Al-Insan Patal Senayan", "Atria Hotel Malang", "Rest Area KM 116A Lampung", "Hypermart Metropolis Tanggerang", "Caliandra Gallery Sariater Campervan Park", "Dusun Bambu Lembang Lobby Playground", "Sari Ater Kamboti Bandung", "Siloam Hospitals Dhirga Surya Medan", "Unhas Hotel & Convention", "Rest Area KM 116B Lampung", "Teras Kota Basement", "RS Hermina Opi Jakabaring", "RS Betha Medika Titik Pendaftaran", "RS Kartika Kasih Titik Lobby", "Gulala Azana Hotel & Resort Guci Tegal", "Labersa Hotel & Convention Center Samosir", "Grand Kanaya Hotel", "Pamulang Square Lt.Dasar", "Camp Hulu Cai Gerbang Babakan", "BT BATIK TRUSMI", "Flow Padel", "Basko City Mall Padang Lantai 1", "RS Sumber Kasih Cirebon", "Mutiara Cahaya Slawi", "RSUD R. Syamsudin Sukabumi - Titik Lobby Pendaftaran", "RSUD R. Syamsudin Sukabumi - Titik Management", "RSUD R. Syamsudin Sukabumi - Titik Lobby Seruni", "Cityloog Hotel Tebet Titik Lobby", "Bank DBS Indonesia Tower Lantai 34", "Masjid Agung Nurul Ikhlas Cilegon", "Hypermart Mega Mall Batam Centre", "Hermes Palace Hotel Aceh", "Hotel Santika Gunung Kidul", "Dusun Bambu Lembang Lounge Mountain Coaster", "Singkawang Grandmall Lantai 2", "Stasiun Bandung Ruang Tunggu Utara Baru", "Mall Paradise Walk Serpong Area UG-05B", "Balubur Town Square Lantai 1 (Depan Hokben)", "De Valais Garden & Resto", "Terminal Ferry Telaga Punggur Batam", "Stasiun Tegal Titik Baru", "Rita Supermall Tegal L. UG", "Ninja Billiard Blok M Square", "Fresh Hotel Sukabumi - Lobby Area", "Masjid Agung Cianjur", "RS Cinta Kasih", "Stasiun Malang Kotabaru Lantai 2", "Indomaret Fresh Cihampelas 149", "Indomaret Fresh Dago 166", "Indomaret Fresh Surya Sumantri", "Indomaret Point Braga", "Tropi Mart & Tropi Toko Buku Sijenjang", "Bumi Aki Puncak", "Stasiun Pekalongan", "Bigmall Samarinda Lantai  2 Depan XXI", "Bigmall Samarinda Lantai G Depan Kidzoona", "Plaza Araya", "Graha Mulia Probolinggo", "Graha Mulia Toserba Lumajang", "59 Hub - Fiftynine Hub", "RS Universitas Andalas", "Wisata Bukit Domba Sentul", "Balairung Hotel Jakarta Area Lobby", "Tomang Tol Plaza Kalimalang", "Agung Toyota Teluk Kuantan Lobby", "Masjid Besar Attaqwa Wanasaba", "RSUD Srengat Kabupaten Blitar", "Klub Bogor Raya", "PLN Rayon Cipayung", "Kaza City Mall Surabaya Lt. 3 Titik Baru", "Masjid Besar Attaqwa Wanasaba Area Wanita", "Agung Toyota Teluk Kuantan Ruang Tunggu Servis", "Lippo Plaza Lubuklinggau Lantai GF", "Singkawang Grand Mall Lantai 2 Baru", "Lippo Plaza Sunset", "RS Murni Teguh Horas Insani", "Platinum Cineplex Sidoarjo", "Bandara Sultan Thaha Saifuddin", "Thee Matic Mall Majalaya", "Plaza Malioboro Yogya Lantai 3 (Dalam Unit)", "Biyasa Cafe & Billiard", "Central Plaza Lampung Lt.G", "E Walk Balikpapan LG Timur", "Pictniq Jogya", "Ninja Billiard Cibinong", "Kebunsu Bogor", "Citywalk Lippo Cikarang", "Lippo Mall Cikarang", "Heha Sky View Yogyakarta Lobby Tiket", "Tangcity Superblock Lantai 2", "Aryaduta Country Club", "Beachwalk Shopping Center Bali Lantai 3", "Rs Dadi Purwokerto Poli Klinik", "Rs Dadi Purwokerto  Pintu Masuk CS", "The Hallway Space", "Gama Tower - Foodcourt", "Chevilly Resort And Camp", "D'Kaliurang Resort & Convention", "PT Pelabuhan Indonesia (Persero) Regional 3 -  Ruang Tunggu Barat", "PT Pelabuhan Indonesia (Persero) Regional 3 -  Ruang Tunggu Tegah", "PT Pelabuhan Indonesia (Persero) Regional 3 - Ruang Tunggu Timur", "Platinum Cineplex Eastvara BSD", "RS Bhayangkara Kediri Lt.4", "Palembang Icon Mall - Lantai UG", "Palembang Icon Mall - Lantai 1", "Palembang Icon Mall - Lantai 3", "PT PLN (Persero) Unit Induk Distribusi Bali", "Hive Harapan Indah", "Pelabuhan Fery Sekupang", "Rest Area KM 43 Merak", "Citimall Lahat LG Baru", "KM Dharma Kartika II", "KM Dharma Ferry V", "Pentacity Shopping Venue Balikpapan Island SF", "Lippo Plaza Jember Lt LG Hypermart", "Lippo Plaza Jember Lt 2F Depan Informa", "Lippo Plaza Jember Lt 2F Depan Foodcourt", "Ramayana Pontianak (EXH-004A)", "Panbil Mall - Lantai 2 Dekat XXI", "Bobopod Alun Alun Malang", "Eagle Hotel Wonosobo By Azana Collection", "Point Coffee Gedhe Kelapa Gading", "Supergym Lubuk Linggau 2 Watervang", "Supergym Lubuk Linggau Senalang", "Mall Top 100 Tembesi", "Aneka Jaya Bandungrejo", "Aneka Jaya Sambiroto", "Bandara Internasional Raja Haji Fi Sabilillah - Boarding Gate", "Front One Hotel Purwodadi", "Skandinavia Tangcity", "Prime Park Hotel & Convention Pekanbaru", "Ramayana Samarinda Square L1-K040", "Ninja Billiard Bintaro", "KM Dharma Rucitra I", "Metro Plaza Pekanbaru", "Terminal Tipe A Mendolo Wonosobo", "Palapa Toserba - Krian", "Plaza Bintaro Jaya Banten CT.03/07", "OPI Mall Palembang LG Basement", "Masjid Hudarahman Pontianak", "Senayan Park Mezzanin", "Point Coffee Gedhe Rest Area 207A", "The Allure Villas Pangandaran Managed By Sahid", "Platinum Cineplex - Trio Mall Kebumen", "Ramayana Panam Square", "Hotel Edotel Nilam Sari", "Bassura Mall Lt. 2", "Cihampelas Walk Bandung Lantai GF-K22", "Cihampelas Walk Bandung Lantai GF - K21", "Lorin Sentul Hotel Lantai 10", "Suzuya Merdeka Mall Lt.4", "Cibinong City Mall Lt.UG", "Palembang Square Lt. 1", "Lippo Plaza Batu Malang Lt. GF (Sewa)", "Gereja BICC Pekanbaru", "Milenial Glow Garden", "Hotel Aston Bogor Area Gym", "Mall BTM Bogor", "Royal Oleh Oleh Pusat Oleh Oleh Modern Batu", "Botani Square Mall Bogor L1 Depan Planet Surf", "Bandara Sultan Aji Muhammad Sulaiman Sepinggan Balikpapan Titik Area Check In", "Bandara Sultan Aji Muhammad Sulaiman Sepinggan Balikpapan Titik Area Kedatangan", "Hotel Grand Dian Guci"];
+let allData = [];
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showMsg(text, isError){
+  const el = document.getElementById('form-msg');
+  el.textContent = text;
+  el.className = 'form-msg ' + (isError ? 'error' : 'ok');
+  if(text){
+    setTimeout(()=>{ if(el.textContent === text){ el.textContent=''; el.className='form-msg'; } }, 3000);
+  }
+}
+
+function getLocationOptions(){
+  const fromData = allData.map(d => d.Lokasi).filter(Boolean);
+  return [...new Set([...PRESET_LOCATIONS, ...fromData])].sort((a,b)=>a.localeCompare(b));
+}
+
+function setupAutocomplete(inputEl, boxEl, getOptions, maxResults){
+  function renderSuggestions(){
+    const q = inputEl.value.trim().toLowerCase();
+    if(!q){ boxEl.classList.remove('show'); boxEl.innerHTML=''; return; }
+    const matches = getOptions().filter(o => o.toLowerCase().includes(q)).slice(0, maxResults || 8);
+    if(matches.length === 0){ boxEl.classList.remove('show'); boxEl.innerHTML=''; return; }
+    boxEl.innerHTML = matches.map(m => `<div data-val="${escapeHtml(m)}">${escapeHtml(m)}</div>`).join('');
+    boxEl.classList.add('show');
+  }
+  inputEl.addEventListener('input', renderSuggestions);
+  inputEl.addEventListener('focus', renderSuggestions);
+  boxEl.addEventListener('pointerdown', (e) => {
+    const item = e.target.closest('div[data-val]');
+    if(!item) return;
+    e.preventDefault();
+    inputEl.value = item.getAttribute('data-val');
+    boxEl.classList.remove('show');
+    boxEl.innerHTML = '';
+  });
+  document.addEventListener('click', (e) => {
+    if(e.target !== inputEl && !boxEl.contains(e.target)){
+      boxEl.classList.remove('show');
+    }
+  });
+}
+
+async function loadData(){
+  const area = document.getElementById('list-area');
+  area.innerHTML = '<div class="loading">Memuat data…</div>';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL);
+    if(!res.ok) throw new Error('bad response');
+    allData = await res.json();
+  }catch(e){
+    area.innerHTML = '<div class="empty">Gagal memuat data. Pastikan APPS_SCRIPT_URL di kode sudah diisi dengan benar dan Apps Script sudah di-deploy sebagai Web App ("Anyone" access).</div>';
+    return;
+  }
+  render();
+}
+
+function render(){
+  const area = document.getElementById('list-area');
+  const q = document.getElementById('search').value.trim().toLowerCase();
+
+  const filtered = allData.filter(d => {
+    if(!q) return true;
+    return (d.Lokasi||'').toLowerCase().includes(q) ||
+           (d.Nomer||'').toString().toLowerCase().includes(q) ||
+           (d.Provider||'').toLowerCase().includes(q);
+  });
+
+  if(allData.length === 0){
+    area.innerHTML = '<div class="empty">Belum ada data. Isi form di atas untuk mulai mendata.</div>';
+    return;
+  }
+  if(filtered.length === 0){
+    area.innerHTML = '<div class="empty">Tidak ada hasil untuk pencarian ini.</div>';
+    return;
+  }
+
+  const groups = {};
+  filtered.forEach(d => {
+    const loc = d.Lokasi || '(Tanpa lokasi)';
+    if(!groups[loc]) groups[loc] = [];
+    groups[loc].push(d);
+  });
+  const locNames = Object.keys(groups).sort((a,b)=>a.localeCompare(b));
+
+  area.innerHTML = locNames.map(loc => {
+    const items = groups[loc]
+      .slice()
+      .sort((a,b)=> new Date(b.Timestamp) - new Date(a.Timestamp))
+      .map(d => {
+        const when = d.Timestamp ? new Date(d.Timestamp).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) : '';
+        return `
+          <li>
+            <span class="nomer">${escapeHtml(d.Nomer || '')}</span>
+            <span class="provider">${escapeHtml(d.Provider || '—')}</span>
+            <span class="meta">${escapeHtml(when)}</span>
+          </li>`;
+      }).join('');
+    return `
+      <div class="location-group">
+        <h3>${escapeHtml(loc)} <span class="n">${groups[loc].length} nomor</span></h3>
+        <ul class="entries">${items}</ul>
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('entry-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const lokasiEl = document.getElementById('lokasi');
+  const nomerEl = document.getElementById('nomer');
+  const providerEl = document.getElementById('provider');
+
+  const payload = {
+    lokasi: lokasiEl.value.trim(),
+    nomer: nomerEl.value.trim(),
+    provider: providerEl.value.trim()
+  };
+
+  if(!payload.lokasi || !payload.nomer){
+    showMsg('Nama lokasi dan nomer wajib diisi.', true);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Mengirim…';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if(result.status !== 'ok') throw new Error(result.message || 'gagal');
+
+    showMsg('Data tersimpan.', false);
+    lokasiEl.value = '';
+    nomerEl.value = '';
+    providerEl.value = '';
+    lokasiEl.focus();
+    await loadData();
+  }catch(e){
+    showMsg('Gagal mengirim data. Cek koneksi atau URL Apps Script.', true);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Kirim';
+});
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('refresh-btn').addEventListener('click', loadData);
+
+setupAutocomplete(document.getElementById('lokasi'), document.getElementById('lokasi-suggestions'), getLocationOptions, 8);
+
+loadData();
+</script>
+</body>
+</html>
