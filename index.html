@@ -168,17 +168,6 @@
     background: #fff;
     margin-bottom: 14px;
   }
-  .location-group{ margin-bottom: 16px; }
-  .location-group h3{
-    font-size: 14.5px;
-    font-weight: 600;
-    margin: 0 0 7px;
-  }
-  .location-group h3 .n{
-    font-weight: 400;
-    color: var(--muted);
-    font-size: 12px;
-  }
   ul.entries{
     list-style: none;
     margin:0; padding:0;
@@ -197,8 +186,7 @@
     font-size: 13.5px;
   }
   ul.entries li:last-child{ border-bottom: none; }
-  .nomer{ font-weight: 600; font-variant-numeric: tabular-nums; }
-  .provider{ color: var(--muted); }
+  .entry-text{ font-weight: 500; }
   .meta{ margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
 
   .empty, .loading{
@@ -343,33 +331,20 @@ function render(){
     return;
   }
 
-  const groups = {};
-  filtered.forEach(d => {
-    const loc = d.Lokasi || '(Tanpa lokasi)';
-    if(!groups[loc]) groups[loc] = [];
-    groups[loc].push(d);
-  });
-  const locNames = Object.keys(groups).sort((a,b)=>a.localeCompare(b));
+  const sorted = filtered.slice().sort((a,b)=> new Date(b.Timestamp) - new Date(a.Timestamp));
 
-  area.innerHTML = locNames.map(loc => {
-    const items = groups[loc]
-      .slice()
-      .sort((a,b)=> new Date(b.Timestamp) - new Date(a.Timestamp))
-      .map(d => {
-        const when = d.Timestamp ? new Date(d.Timestamp).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) : '';
-        return `
-          <li>
-            <span class="nomer">${escapeHtml(d.Nomer || '')}</span>
-            <span class="provider">${escapeHtml(d.Provider || '—')}</span>
-            <span class="meta">${escapeHtml(when)}</span>
-          </li>`;
-      }).join('');
+  const items = sorted.map(d => {
+    const when = d.Timestamp ? new Date(d.Timestamp).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) : '';
+    const loc = d.Lokasi || '(Tanpa lokasi)';
+    const parts = [loc, d.Nomer || '-', d.Provider || '-'];
     return `
-      <div class="location-group">
-        <h3>${escapeHtml(loc)} <span class="n">${groups[loc].length} nomor</span></h3>
-        <ul class="entries">${items}</ul>
-      </div>`;
+      <li>
+        <span class="entry-text">${escapeHtml(parts.join(' - '))}</span>
+        <span class="meta">${escapeHtml(when)}</span>
+      </li>`;
   }).join('');
+
+  area.innerHTML = `<ul class="entries">${items}</ul>`;
 }
 
 document.getElementById('entry-form').addEventListener('submit', async (ev) => {
