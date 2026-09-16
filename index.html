@@ -401,6 +401,10 @@ document.getElementById('entry-form').addEventListener('submit', async (ev) => {
 
   btn.disabled = true;
   btn.textContent = 'Mengirim…';
+  const slowNotice = setTimeout(() => {
+    btn.textContent = 'Sedang menyimpan, mohon tunggu…';
+  }, 4000);
+
   try{
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
@@ -419,6 +423,7 @@ document.getElementById('entry-form').addEventListener('submit', async (ev) => {
   }catch(e){
     showMsg('Gagal mengirim data. Cek koneksi atau URL Apps Script.', true);
   }
+  clearTimeout(slowNotice);
   btn.disabled = false;
   btn.textContent = 'Kirim';
 });
