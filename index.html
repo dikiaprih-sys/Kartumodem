@@ -1259,7 +1259,7 @@ function setupAutocomplete(inputEl, boxEl, getOptions, maxResults){
     boxEl.innerHTML = matches.map(m => `<div data-val="${escapeHtml(m)}">${escapeHtml(m)}</div>`).join('');
     boxEl.classList.add('show');
   }
-  inputEl.addEventListener('input', renderSuggestions);
+  inputEl.addEventListener('input', () => { inputEl.style.borderColor = ''; renderSuggestions(); });
   inputEl.addEventListener('focus', renderSuggestions);
   boxEl.addEventListener('pointerdown', (e) => {
     const item = e.target.closest('div[data-val]');
@@ -1343,6 +1343,18 @@ document.getElementById('entry-form').addEventListener('submit', async (ev) => {
     showMsg('Nama lokasi dan nomer wajib diisi.', true);
     return;
   }
+
+  const validLocation = getLocationOptions().some(
+    loc => loc.toLowerCase() === payload.lokasi.toLowerCase()
+  );
+  if(!validLocation){
+    showMsg('Pilih nama lokasi dari daftar saran yang muncul (tidak bisa ketik bebas).', true);
+    lokasiEl.style.borderColor = 'var(--danger)';
+    lokasiEl.focus();
+    lokasiEl.dispatchEvent(new Event('input'));
+    return;
+  }
+  lokasiEl.style.borderColor = '';
 
   btn.disabled = true;
   btn.textContent = 'Mengirim…';
